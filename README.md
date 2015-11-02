@@ -1,6 +1,6 @@
 # Flickpaper
 
-TODO: Write a gem description
+Sets your GNOME wallpaper to a recent interesting photo from flickr
 
 ## Installation
 
@@ -20,7 +20,9 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+```shell
+$ flickpaper
+```
 
 ## Contributing
 
