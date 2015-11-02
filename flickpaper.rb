@@ -96,12 +96,7 @@ module Flickpaper
   end
 
   def self.get_ids(file)
-    path = File.join(ENV['HOME'], '.flickpaper.dump')
-    if File.file?(path)
-      Marshal.load(File.read(path))
-    else
-      []
-    end
+    File.file?(file) ? Marshal.load(File.read(file)) : []
   end
 
   def self.put_ids(file, ids)
