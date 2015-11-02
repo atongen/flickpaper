@@ -66,8 +66,8 @@ module Flickpaper
   end
 
   def self.save_file(url, dst)
-    File.open(dst, "wb") do |saved_file|
-      open(url, "rb") do |read_file|
+    File.open(dst, 'wb') do |saved_file|
+      open(url, 'rb') do |read_file|
         saved_file.write(read_file.read)
       end
     end
@@ -85,6 +85,21 @@ module Flickpaper
     EOBASH
     system(bash)
   end
+
+  def self.get_ids
+    path = File.join(ENV['HOME'], '.flickpaper.dump')
+    if File.file?(path)
+      Marshal.load(File.read(path))
+    else
+      []
+    end
+  end
+
+  def self.put_ids(ids)
+    path = File.join(ENV['HOME'], '.flickpaper.dump')
+    File.open(path, 'wb') { |f| f << Marshal.dump(ids) }
+    ids
+  end
 end
 
 if __FILE__ == $0
@@ -92,6 +107,8 @@ if __FILE__ == $0
   Flickpaper.init
 
   list = Flickpaper.interesting
+  ids = Flickpaper.get_ids
+  list = list.select { |l| !ids.include?(l['id']) }
   infos = Flickpaper.sort_infos(Flickpaper.infos(list))
   sorted_list = infos.map do |info|
     list.detect { |photo| photo['id'] == info['id'] }
@@ -109,10 +126,13 @@ if __FILE__ == $0
     end
   end
 
-  my_photo = sorted_list[idx]
-  my_info = infos[idx]
+  if idx
+    my_photo = sorted_list[idx]
+    my_info = infos[idx]
 
-  dst = File.join(ENV['HOME'], '.flickr.jpg')
-  Flickpaper.save_file(url, dst)
-  Flickpaper.set_wallpaper(dst)
+    dst = File.join(ENV['HOME'], '.flickpaper.jpg')
+    Flickpaper.save_file(url, dst)
+    Flickpaper.set_wallpaper(dst)
+    Flickpaper.put_ids(ids<<my_photo['id'])
+  end
 end
