@@ -5,8 +5,8 @@ require 'optparse'
 require 'open-uri'
 
 module Flickpaper
-  API_KEY = '4027d0c82688548d5a72a2e6a37220f4'
-  SHARED_SECRET = '61f001fe9022e85b'
+  API_KEY = '23005d9cf8cc185c1c2d17152d03d98b'
+  SHARED_SECRET = 'a6e67612f607b407'
 
   def self.init
     FlickRaw.api_key = API_KEY

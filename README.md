@@ -1,10 +1,16 @@
 # Flickpaper
 
-Sets your GNOME wallpaper to a recent interesting photo from flickr
+A [Flickr App](https://www.flickr.com/services/apps/72157658406991003) that sets your GNOME wallpaper to a recent interesting photo
 
 ## Installation
 
-Add this line to your application's Gemfile:
+Install the gem:
+
+```shell
+$ gem install flickpaper
+```
+
+Or add this line to your application's Gemfile:
 
 ```ruby
 gem 'flickpaper'
@@ -12,11 +18,9 @@ gem 'flickpaper'
 
 And then execute:
 
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install flickpaper
+```shell
+$ bundle
+```
 
 ## Usage
 
@@ -27,6 +31,8 @@ Usage: $ flickpaper [options]
     -v, --verbose                    Verbose
         --version                    Show version
 ```
+
+Use with cron to periodically get a new interesting desktop wallpaper.
 
 ## Contributing
 
