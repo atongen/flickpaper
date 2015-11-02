@@ -19,7 +19,7 @@ module Flickpaper
       image: File.join(ENV['HOME'], '.flickpaper.jpg')
     }
     opt_parser = OptionParser.new do |opts|
-      opts.banner = "Usage: #{$0} [options]"
+      opts.banner = "Usage: $ #{File.basename($0)} [options]"
       opts.on('-d', '--dump [PATH]', "Dump file for used photo ids. Default: #{options[:dump]}") do |dump|
         options[:dump] = dump
       end
