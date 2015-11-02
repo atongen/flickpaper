@@ -1,3 +1,4 @@
 source 'https://rubygems.org'
 
-gem 'flickraw'
+# Specify your gem's dependencies in flickpaper.gemspec
+gemspec

@@ -1,11 +1,10 @@
-#!/usr/bin/env ruby
+require "flickpaper/version"
 
 require 'flickraw'
 require 'optparse'
 require 'open-uri'
 
 module Flickpaper
-  VERSION = File.read(File.expand_path('../version', __FILE__)).to_s.strip.split('.').map(&:to_i)
   API_KEY = '4027d0c82688548d5a72a2e6a37220f4'
   SHARED_SECRET = '61f001fe9022e85b'
 
@@ -103,38 +102,38 @@ module Flickpaper
     File.open(file, 'wb') { |f| f << Marshal.dump(ids) }
     ids
   end
-end
 
-if __FILE__ == $0
-  arguments, options = Flickpaper.parse_opts(ARGV.dup)
-  Flickpaper.init
+  def self.run!
+    arguments, options = Flickpaper.parse_opts(ARGV.dup)
+    Flickpaper.init
 
-  list = Flickpaper.interesting
-  ids = Flickpaper.get_ids(options[:dump])
-  list = list.select { |l| !ids.include?(l['id']) }
-  infos = Flickpaper.sort_infos(Flickpaper.infos(list))
-  sorted_list = infos.map do |info|
-    list.detect { |photo| photo['id'] == info['id'] }
-  end
-  sizes = Flickpaper.sizes(sorted_list)
-
-  idx = nil
-  url = nil
-
-  (0...(sizes.length)).each do |i|
-    if my_size = sizes[i].detect { |s| s['label'] == "Large 2048" }
-      idx = i
-      url = my_size['source']
-      break
+    list = Flickpaper.interesting
+    ids = Flickpaper.get_ids(options[:dump])
+    list = list.select { |l| !ids.include?(l['id']) }
+    infos = Flickpaper.sort_infos(Flickpaper.infos(list))
+    sorted_list = infos.map do |info|
+      list.detect { |photo| photo['id'] == info['id'] }
     end
-  end
+    sizes = Flickpaper.sizes(sorted_list)
 
-  if idx
-    my_photo = sorted_list[idx]
-    my_info = infos[idx]
+    idx = nil
+    url = nil
 
-    Flickpaper.save_file(url, options[:image])
-    Flickpaper.set_wallpaper(options[:image])
-    Flickpaper.put_ids(options[:dump], ids<<my_photo['id'])
+    (0...(sizes.length)).each do |i|
+      if my_size = sizes[i].detect { |s| s['label'] == "Large 2048" }
+        idx = i
+        url = my_size['source']
+        break
+      end
+    end
+
+    if idx
+      my_photo = sorted_list[idx]
+      my_info = infos[idx]
+
+      Flickpaper.save_file(url, options[:image])
+      Flickpaper.set_wallpaper(options[:image])
+      Flickpaper.put_ids(options[:dump], ids<<my_photo['id'])
+    end
   end
 end
