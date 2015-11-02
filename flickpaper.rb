@@ -15,9 +15,18 @@ module Flickpaper
   end
 
   def self.parse_opts(opts)
-    options = {}
+    options = {
+      dump: File.join(ENV['HOME'], '.flickpaper.dump'),
+      image: File.join(ENV['HOME'], '.flickpaper.jpg')
+    }
     opt_parser = OptionParser.new do |opts|
       opts.banner = "Usage: #{$0} [options]"
+      opts.on('-d', '--dump [PATH]', "Dump file for used photo ids. Default: #{options[:dump]}") do |dump|
+        options[:dump] = dump
+      end
+      opts.on('-i', '--image [PATH]', "Where to store the downloaded image. Default: #{options[:image]}") do |image|
+        options[:image] = image
+      end
       opts.on('-v', '--verbose', 'Verbose') do |verbose|
         options[:verbose] = verbose
       end
@@ -86,7 +95,7 @@ module Flickpaper
     system(bash)
   end
 
-  def self.get_ids
+  def self.get_ids(file)
     path = File.join(ENV['HOME'], '.flickpaper.dump')
     if File.file?(path)
       Marshal.load(File.read(path))
@@ -95,9 +104,8 @@ module Flickpaper
     end
   end
 
-  def self.put_ids(ids)
-    path = File.join(ENV['HOME'], '.flickpaper.dump')
-    File.open(path, 'wb') { |f| f << Marshal.dump(ids) }
+  def self.put_ids(file, ids)
+    File.open(file, 'wb') { |f| f << Marshal.dump(ids) }
     ids
   end
 end
@@ -107,7 +115,7 @@ if __FILE__ == $0
   Flickpaper.init
 
   list = Flickpaper.interesting
-  ids = Flickpaper.get_ids
+  ids = Flickpaper.get_ids(options[:dump])
   list = list.select { |l| !ids.include?(l['id']) }
   infos = Flickpaper.sort_infos(Flickpaper.infos(list))
   sorted_list = infos.map do |info|
@@ -130,9 +138,8 @@ if __FILE__ == $0
     my_photo = sorted_list[idx]
     my_info = infos[idx]
 
-    dst = File.join(ENV['HOME'], '.flickpaper.jpg')
-    Flickpaper.save_file(url, dst)
-    Flickpaper.set_wallpaper(dst)
-    Flickpaper.put_ids(ids<<my_photo['id'])
+    Flickpaper.save_file(url, options[:image])
+    Flickpaper.set_wallpaper(options[:image])
+    Flickpaper.put_ids(options[:dump], ids<<my_photo['id'])
   end
 end
