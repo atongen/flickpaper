@@ -32,6 +32,8 @@ Usage: $ flickpaper [options]
         --version                    Show version
 ```
 
+Use with cron to periodically get a new interesting desktop wallpaper.
+
 ## Contributing
 
 1. Fork it ( https://github.com/atongen/flickpaper/fork )
