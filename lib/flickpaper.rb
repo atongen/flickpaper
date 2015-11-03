@@ -71,12 +71,12 @@ module Flickpaper
   end
 
   def self.set_wallpaper(path)
+    # http://dbus.freedesktop.org/doc/dbus-launch.1.html
     bash = <<-EOBASH
-      sessionfile=`find "${HOME}/.dbus/session-bus/" -type f`
-      eval `cat ${sessionfile}`
-      export DBUS_SESSION_BUS_ADDRESS \
-             DBUS_SESSION_BUS_PID \
-             DBUS_SESSION_BUS_WINDOWID
+      if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
+        # if not found, launch a new one
+        eval `dbus-launch --sh-syntax`
+      fi
 
       gsettings set org.gnome.desktop.background picture-uri "file://#{path}"
     EOBASH
