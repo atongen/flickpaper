@@ -3,6 +3,7 @@ require 'flickpaper/version'
 require 'flickraw'
 require 'optparse'
 require 'open-uri'
+require 'rbconfig'
 
 module Flickpaper
   API_KEY = '23005d9cf8cc185c1c2d17152d03d98b'
@@ -71,16 +72,43 @@ module Flickpaper
   end
 
   def self.set_wallpaper(path)
-    # http://dbus.freedesktop.org/doc/dbus-launch.1.html
-    bash = <<-EOBASH
-      if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
-        # if not found, launch a new one
-        eval `dbus-launch --sh-syntax`
-      fi
+    case os
+    when :windows
+      false
+    when :macosx
+      set_wallpaper_macosx(path)
+    when :linux, :unix
+      set_wallpaper_linux(path)
+    else
+      false
+    end
+  end
 
-      gsettings set org.gnome.desktop.background picture-uri "file://#{path}"
+  def self.set_wallpaper_macosx(path)
+    bash = <<-EOBASH
+      tell application "Finder"
+        set desktop picture to POSIX file "#{path}"
+      end tell
     EOBASH
     system(bash)
+  end
+
+  def self.set_wallpaper_linux(path)
+    dbus_launch = %w{ which dbus-launch }.to_s.strip
+    if dbus_launch != ""
+      # http://dbus.freedesktop.org/doc/dbus-launch.1.html
+      bash = <<-EOBASH
+        if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
+          # if not found, launch a new one
+          eval `dbus-launch --sh-syntax`
+        fi
+
+        gsettings set org.gnome.desktop.background picture-uri "file://#{path}"
+      EOBASH
+      system(bash)
+    else
+      false
+    end
   end
 
   def self.get_ids(file)
@@ -90,6 +118,20 @@ module Flickpaper
   def self.put_ids(file, ids)
     File.open(file, 'wb') { |f| f << Marshal.dump(ids) }
     ids
+  end
+
+  def self.os
+    host_os = RbConfig::CONFIG['host_os']
+    case host_os
+    when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
+      :windows
+    when /darwin|mac os/
+      :macosx
+    when /linux/
+      :linux
+    when /solaris|bsd/
+      :unix
+    end
   end
 
   def self.run!
@@ -123,13 +165,19 @@ module Flickpaper
 
     if idx
       my_photo = list[idx]
-      if options[:verbose]
-        puts "Setting photo #{my_photo['id']} as wallpaper"
-      end
 
       Flickpaper.save_file(url, options[:image])
-      Flickpaper.set_wallpaper(options[:image])
-      Flickpaper.put_ids(options[:dump], ids<<my_photo['id'])
+      result = Flickpaper.set_wallpaper(options[:image])
+      if result
+        if options[:verbose]
+          puts "Set photo #{my_photo['id']} as wallpaper"
+        end
+        Flickpaper.put_ids(options[:dump], ids<<my_photo['id'])
+      else
+        if options[:verbose]
+          puts "Unable to set photo #{my_photo['id']} as wallpaper"
+        end
+      end
     else
       if options[:verbose]
         puts "Unable to find photo for wallpaper"
