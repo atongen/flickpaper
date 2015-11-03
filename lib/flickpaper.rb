@@ -1,4 +1,4 @@
-require "flickpaper/version"
+require 'flickpaper/version'
 
 require 'flickraw'
 require 'optparse'
@@ -62,17 +62,6 @@ module Flickpaper
     end
   end
 
-  def self.sort_infos(infos)
-    sort_vals = infos.inject({}) do |sort_vals, info|
-      sort_vals[info['id']] = (info['views'].to_f ** 0.5) * (info['comments'].to_f ** 0.5)
-      sort_vals
-    end
-
-    infos.sort do |x,y|
-      sort_vals[y['id']] <=> sort_vals[x['id']]
-    end
-  end
-
   def self.save_file(url, dst)
     File.open(dst, 'wb') do |saved_file|
       open(url, 'rb') do |read_file|
@@ -105,22 +94,27 @@ module Flickpaper
 
   def self.run!
     arguments, options = Flickpaper.parse_opts(ARGV.dup)
+    if options[:verbose]
+      puts "Initializing flickr api"
+    end
     Flickpaper.init
 
-    list = Flickpaper.interesting
+    if options[:verbose]
+      puts "Getting interesting list"
+    end
+    list = Flickpaper.interesting(per_page: 25)
     ids = Flickpaper.get_ids(options[:dump])
     list = list.select { |l| !ids.include?(l['id']) }
-    infos = Flickpaper.sort_infos(Flickpaper.infos(list))
-    sorted_list = infos.map do |info|
-      list.detect { |photo| photo['id'] == info['id'] }
-    end
-    sizes = Flickpaper.sizes(sorted_list)
 
     idx = nil
     url = nil
 
-    (0...(sizes.length)).each do |i|
-      if my_size = sizes[i].detect { |s| s['label'] == "Large 2048" }
+    if options[:verbose]
+      puts "Selecting large photo"
+    end
+    (0...(list.length)).each do |i|
+      size = flickr.photos.getSizes(photo_id: list[i]['id'])
+      if my_size = size.detect { |s| s['label'] == "Large 2048" }
         idx = i
         url = my_size['source']
         break
@@ -128,12 +122,18 @@ module Flickpaper
     end
 
     if idx
-      my_photo = sorted_list[idx]
-      my_info = infos[idx]
+      my_photo = list[idx]
+      if options[:verbose]
+        puts "Setting photo #{my_photo['id']} as wallpaper"
+      end
 
       Flickpaper.save_file(url, options[:image])
       Flickpaper.set_wallpaper(options[:image])
       Flickpaper.put_ids(options[:dump], ids<<my_photo['id'])
+    else
+      if options[:verbose]
+        puts "Unable to find photo for wallpaper"
+      end
     end
   end
 end
