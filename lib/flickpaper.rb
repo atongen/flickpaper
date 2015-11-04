@@ -4,6 +4,7 @@ require 'flickraw'
 require 'optparse'
 require 'open-uri'
 require 'rbconfig'
+require 'logger'
 
 module Flickpaper
   API_KEY = '23005d9cf8cc185c1c2d17152d03d98b'
@@ -17,7 +18,8 @@ module Flickpaper
   def self.parse_opts(opts)
     options = {
       dump: File.join(ENV['HOME'], '.flickpaper.dump'),
-      image: File.join(ENV['HOME'], '.flickpaper.jpg')
+      image: File.join(ENV['HOME'], '.flickpaper.jpg'),
+      log: nil
     }
     opt_parser = OptionParser.new do |opts|
       opts.banner = "Usage: $ #{File.basename($0)} [options]"
@@ -27,12 +29,15 @@ module Flickpaper
       opts.on('-i', '--image [PATH]', "Where to store the downloaded image. Default: #{options[:image]}") do |image|
         options[:image] = image
       end
+      opts.on('-l', '--log [PATH]', "Path to log file. Default: STDOUT") do |log|
+        options[:log] = log
+      end
       opts.on('-v', '--verbose', 'Verbose') do |verbose|
         options[:verbose] = verbose
       end
       opts.on_tail("--version", "Show version") do
-        puts Flickpaper::VERSION.map(&:to_s).join('.')
-        exit
+        puts Flickpaper::VERSION
+        exit 0
       end
     end
     opt_parser.parse!(opts)
@@ -68,6 +73,20 @@ module Flickpaper
       open(url, 'rb') do |read_file|
         saved_file.write(read_file.read)
       end
+    end
+  end
+
+  def self.os
+    host_os = RbConfig::CONFIG['host_os']
+    case host_os
+    when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
+      :windows
+    when /darwin|mac os/
+      :macosx
+    when /linux/
+      :linux
+    when /solaris|bsd/
+      :unix
     end
   end
 
@@ -120,30 +139,14 @@ module Flickpaper
     ids
   end
 
-  def self.os
-    host_os = RbConfig::CONFIG['host_os']
-    case host_os
-    when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
-      :windows
-    when /darwin|mac os/
-      :macosx
-    when /linux/
-      :linux
-    when /solaris|bsd/
-      :unix
-    end
-  end
-
   def self.run!
     arguments, options = Flickpaper.parse_opts(ARGV.dup)
-    if options[:verbose]
-      puts "Initializing flickr api"
-    end
+    log = Logger.new(options[:log] ? options[:log] : STDOUT)
+    log.level = options[:verbose] ? Logger::INFO : Logger::ERROR
+
     Flickpaper.init
 
-    if options[:verbose]
-      puts "Getting interesting list"
-    end
+    log.info("Getting interesting list")
     list = Flickpaper.interesting(per_page: 25)
     ids = Flickpaper.get_ids(options[:dump])
     list = list.select { |l| !ids.include?(l['id']) }
@@ -151,9 +154,7 @@ module Flickpaper
     idx = nil
     url = nil
 
-    if options[:verbose]
-      puts "Selecting large photo"
-    end
+    log.info("Selecting large photo")
     (0...(list.length)).each do |i|
       size = flickr.photos.getSizes(photo_id: list[i]['id'])
       if my_size = size.detect { |s| s['label'] == "Large 2048" }
@@ -169,19 +170,13 @@ module Flickpaper
       Flickpaper.save_file(url, options[:image])
       result = Flickpaper.set_wallpaper(options[:image])
       if result
-        if options[:verbose]
-          puts "Set photo #{my_photo['id']} as wallpaper"
-        end
+        log.info("Set photo #{my_photo['id']} as wallpaper")
         Flickpaper.put_ids(options[:dump], ids<<my_photo['id'])
       else
-        if options[:verbose]
-          puts "Unable to set photo #{my_photo['id']} as wallpaper"
-        end
+        log.error("Unable to set photo #{my_photo['id']} as wallpaper")
       end
     else
-      if options[:verbose]
-        puts "Unable to find photo for wallpaper"
-      end
+      log.error("Unable to find photo for wallpaper")
     end
   end
 end
