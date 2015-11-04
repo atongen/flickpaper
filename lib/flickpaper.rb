@@ -1,8 +1,10 @@
-require "flickpaper/version"
+require 'flickpaper/version'
 
 require 'flickraw'
 require 'optparse'
 require 'open-uri'
+require 'rbconfig'
+require 'logger'
 
 module Flickpaper
   API_KEY = '23005d9cf8cc185c1c2d17152d03d98b'
@@ -16,7 +18,8 @@ module Flickpaper
   def self.parse_opts(opts)
     options = {
       dump: File.join(ENV['HOME'], '.flickpaper.dump'),
-      image: File.join(ENV['HOME'], '.flickpaper.jpg')
+      image: File.join(ENV['HOME'], '.flickpaper.jpg'),
+      log: nil
     }
     opt_parser = OptionParser.new do |opts|
       opts.banner = "Usage: $ #{File.basename($0)} [options]"
@@ -26,12 +29,15 @@ module Flickpaper
       opts.on('-i', '--image [PATH]', "Where to store the downloaded image. Default: #{options[:image]}") do |image|
         options[:image] = image
       end
+      opts.on('-l', '--log [PATH]', "Path to log file. Default: STDOUT") do |log|
+        options[:log] = log
+      end
       opts.on('-v', '--verbose', 'Verbose') do |verbose|
         options[:verbose] = verbose
       end
       opts.on_tail("--version", "Show version") do
-        puts Flickpaper::VERSION.map(&:to_s).join('.')
-        exit
+        puts Flickpaper::VERSION
+        exit 0
       end
     end
     opt_parser.parse!(opts)
@@ -62,17 +68,6 @@ module Flickpaper
     end
   end
 
-  def self.sort_infos(infos)
-    sort_vals = infos.inject({}) do |sort_vals, info|
-      sort_vals[info['id']] = (info['views'].to_f ** 0.5) * (info['comments'].to_f ** 0.5)
-      sort_vals
-    end
-
-    infos.sort do |x,y|
-      sort_vals[y['id']] <=> sort_vals[x['id']]
-    end
-  end
-
   def self.save_file(url, dst)
     File.open(dst, 'wb') do |saved_file|
       open(url, 'rb') do |read_file|
@@ -81,17 +76,58 @@ module Flickpaper
     end
   end
 
-  def self.set_wallpaper(path)
-    bash = <<-EOBASH
-      sessionfile=`find "${HOME}/.dbus/session-bus/" -type f`
-      eval `cat ${sessionfile}`
-      export DBUS_SESSION_BUS_ADDRESS \
-             DBUS_SESSION_BUS_PID \
-             DBUS_SESSION_BUS_WINDOWID
+  def self.os
+    host_os = RbConfig::CONFIG['host_os']
+    case host_os
+    when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
+      :windows
+    when /darwin|mac os/
+      :macosx
+    when /linux/
+      :linux
+    when /solaris|bsd/
+      :unix
+    end
+  end
 
-      gsettings set org.gnome.desktop.background picture-uri "file://#{path}"
+  def self.set_wallpaper(path)
+    case os
+    when :windows
+      false
+    when :macosx
+      set_wallpaper_macosx(path)
+    when :linux, :unix
+      set_wallpaper_linux(path)
+    else
+      false
+    end
+  end
+
+  def self.set_wallpaper_macosx(path)
+    bash = <<-EOBASH
+      tell application "Finder"
+        set desktop picture to POSIX file "#{path}"
+      end tell
     EOBASH
     system(bash)
+  end
+
+  def self.set_wallpaper_linux(path)
+    dbus_launch = %w{ which dbus-launch }.to_s.strip
+    if dbus_launch != ""
+      # http://dbus.freedesktop.org/doc/dbus-launch.1.html
+      bash = <<-EOBASH
+        if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
+          # if not found, launch a new one
+          eval `dbus-launch --sh-syntax`
+        fi
+
+        gsettings set org.gnome.desktop.background picture-uri "file://#{path}"
+      EOBASH
+      system(bash)
+    else
+      false
+    end
   end
 
   def self.get_ids(file)
@@ -105,22 +141,23 @@ module Flickpaper
 
   def self.run!
     arguments, options = Flickpaper.parse_opts(ARGV.dup)
+    log = Logger.new(options[:log] ? options[:log] : STDOUT)
+    log.level = options[:verbose] ? Logger::INFO : Logger::ERROR
+
     Flickpaper.init
 
-    list = Flickpaper.interesting
+    log.info("Getting interesting list")
+    list = Flickpaper.interesting(per_page: 25)
     ids = Flickpaper.get_ids(options[:dump])
     list = list.select { |l| !ids.include?(l['id']) }
-    infos = Flickpaper.sort_infos(Flickpaper.infos(list))
-    sorted_list = infos.map do |info|
-      list.detect { |photo| photo['id'] == info['id'] }
-    end
-    sizes = Flickpaper.sizes(sorted_list)
 
     idx = nil
     url = nil
 
-    (0...(sizes.length)).each do |i|
-      if my_size = sizes[i].detect { |s| s['label'] == "Large 2048" }
+    log.info("Selecting large photo")
+    (0...(list.length)).each do |i|
+      size = flickr.photos.getSizes(photo_id: list[i]['id'])
+      if my_size = size.detect { |s| s['label'] == "Large 2048" }
         idx = i
         url = my_size['source']
         break
@@ -128,12 +165,18 @@ module Flickpaper
     end
 
     if idx
-      my_photo = sorted_list[idx]
-      my_info = infos[idx]
+      my_photo = list[idx]
 
       Flickpaper.save_file(url, options[:image])
-      Flickpaper.set_wallpaper(options[:image])
-      Flickpaper.put_ids(options[:dump], ids<<my_photo['id'])
+      result = Flickpaper.set_wallpaper(options[:image])
+      if result
+        log.info("Set photo #{my_photo['id']} as wallpaper")
+        Flickpaper.put_ids(options[:dump], ids<<my_photo['id'])
+      else
+        log.error("Unable to set photo #{my_photo['id']} as wallpaper")
+      end
+    else
+      log.error("Unable to find photo for wallpaper")
     end
   end
 end
