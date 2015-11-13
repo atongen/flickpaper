@@ -147,7 +147,7 @@ module Flickpaper
     Flickpaper.init
 
     log.info("Getting interesting list")
-    list = Flickpaper.interesting(per_page: 25)
+    list = Flickpaper.interesting(per_page: 100)
     ids = Flickpaper.get_ids(options[:dump])
     list = list.select { |l| !ids.include?(l['id']) }
 
