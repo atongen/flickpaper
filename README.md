@@ -29,11 +29,16 @@ $ bundle
 
 ```shell
 Usage: $ flickpaper [options]
-    -d, --dump [PATH]                Dump file for used photo ids. Default: $HOME/.flickpaper.dump
-    -i, --image [PATH]               Where to store the downloaded image. Default: $HOME/.flickpaper.jpg
-    -l, --log [PATH]                 Path to log file. Default: STDOUT
-    -v, --verbose                    Verbose
-        --version                    Show version
+    -d, --dump PATH                  Dump file for used photo ids. Default: $HOME/.flickpaper.dump
+    -i, --image PATH                 Where to store the downloaded image. Default: $HOME/.flickpaper.jpg
+    -l, --log PATH                   Path to log file. Default: STDOUT
+    -p, --per-page PER_PAGE          Number of interesting photos per page in flickr api call. Default: 100
+        --date DATE                  A specific date, formatted as YYYY-MM-DD, to return interesting photos for. Default: null (most recent)
+        --page PAGE                  The page of results to return. Default: 1
+    -s, --size SIZE                  Minimum acceptable image size. Default: Large 2048
+    -v, --verbose                    Be verbose.
+        --sizes                      Print sizes and exit.
+        --version                    Show version and exit.
 ```
 
 Use with cron to periodically get a new interesting desktop wallpaper.
