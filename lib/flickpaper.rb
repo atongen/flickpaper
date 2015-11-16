@@ -115,8 +115,8 @@ module Flickpaper
     end
   end
 
-  # This is a automator script, so it won't work.
-  # TODO: http://apple.stackexchange.com/questions/200125/how-to-create-an-osx-application-to-wrap-a-call-to-a-shell-script
+  # http://apple.stackexchange.com/questions/200125/how-to-create-an-osx-application-to-wrap-a-call-to-a-shell-script
+  # http://www.hccp.org/command-line-os-x.html
   def self.set_wallpaper_macosx(path)
     bash = <<-EOBASH
       tell application "Finder"
