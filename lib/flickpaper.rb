@@ -117,13 +117,17 @@ module Flickpaper
 
   # http://apple.stackexchange.com/questions/200125/how-to-create-an-osx-application-to-wrap-a-call-to-a-shell-script
   # http://www.hccp.org/command-line-os-x.html
+  # http://osxdaily.com/2015/08/28/set-wallpaper-command-line-macosx/
   def self.set_wallpaper_macosx(path)
-    bash = <<-EOBASH
-      tell application "Finder"
-        set desktop picture to POSIX file "#{path}"
-      end tell
-    EOBASH
-    system(bash)
+    osascript = %w{ which osascript }
+    if osascript == ""
+      false
+    else
+      bash = <<-EOBASH
+        #{osascript} -e 'tell application "Finder" set desktop picture to POSIX file "#{path}"'
+      EOBASH
+      system(bash)
+    end
   end
 
   def self.set_wallpaper_linux(path)
