@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = Flickpaper::VERSION
   spec.authors       = ["Andrew Tongen"]
   spec.email         = ["atongen@gmail.com"]
-  spec.summary       = %q{Sets your GNOME wallpaper to a recent interesting photo from flickr}
-  spec.description   = IO.read(File.join(File.dirname(__FILE__), 'README.md'))
+  spec.summary       = %q{Sets your GNOME or OSX wallpaper to a recent interesting photo from flickr}
+  spec.description   = %q{Sets your GNOME or OSX wallpaper to a recent interesting photo from flickr}
   spec.homepage      = "http://github.com/atongen/flickpaper"
   spec.license       = "MIT"
 
