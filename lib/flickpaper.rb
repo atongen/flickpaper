@@ -119,7 +119,7 @@ module Flickpaper
   # http://www.hccp.org/command-line-os-x.html
   # http://osxdaily.com/2015/08/28/set-wallpaper-command-line-macosx/
   def self.set_wallpaper_macosx(path)
-    osascript = %w{ which osascript }
+    osascript = %x{ which osascript }
     if osascript == ""
       false
     else
