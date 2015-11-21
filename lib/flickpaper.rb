@@ -34,7 +34,7 @@ module Flickpaper
   def self.parse_opts(opts)
     options = {
       dump: File.join(ENV['HOME'], '.flickpaper.dump'),
-      image: File.join(ENV['HOME'], '.flickpaper.jpg'),
+      image: get_default_image_path,
       log: nil,
       per_page: 100,
       date: nil,
@@ -124,7 +124,7 @@ module Flickpaper
       false
     else
       bash = <<-EOBASH
-        #{osascript} -e 'tell application "Finder" set desktop picture to POSIX file "#{path}"'
+        #{osascript} -e 'tell application "Finder" to set desktop picture to POSIX file "#{path}"'
       EOBASH
       system(bash)
     end
@@ -146,6 +146,24 @@ module Flickpaper
         #{gsettings} set org.gnome.desktop.background picture-uri "file://#{path}"
       EOBASH
       system(bash)
+    end
+  end
+
+  def self.get_default_image_path
+    case os
+    when :windows
+      false
+    when :macosx
+      home_tmp = File.join(ENV['HOME'], 'tmp')
+      if File.directory?(home_tmp)
+        File.join(home_tmp, "flickpaper-#{ENV['USER']}.jpg")
+      else
+        File.join('/tmp', "flickpaper-#{ENV['USER']}.jpg")
+      end
+    when :linux, :unix
+      File.join(ENV['HOME'], '.flickpaper.jpg')
+    else
+      false
     end
   end
 
