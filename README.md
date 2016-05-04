@@ -1,7 +1,10 @@
 # Flickpaper
 
 A [Ruby Gem](https://rubygems.org/gems/flickpaper) and [Flickr App](https://www.flickr.com/services/apps/72157658406991003)
-that sets your GNOME or OSX wallpaper to a recent interesting photo.
+that sets your Linux or OSX wallpaper to a recent interesting photo.
+
+For linux, it works under Gnome and window managers that use [feh](https://wiki.archlinux.org/index.php/Feh)
+to update the desktop wallpaper.
 
 Does not (and will likely never) work under MS Windows.
 

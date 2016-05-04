@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    flickpaper (0.0.3)
+    flickpaper (0.0.4)
       flickraw
 
 GEM

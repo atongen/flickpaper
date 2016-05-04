@@ -102,6 +102,29 @@ module Flickpaper
     end
   end
 
+  # http://unix.stackexchange.com/questions/116539/how-to-detect-the-desktop-environment-in-a-bash-script
+  def self.window_manager
+    if ENV['XDG_CURRENT_DESKTOP']
+      desktop = ENV['XDG_CURRENT_DESKTOP']
+        .downcase
+    else
+      exclude = %w{ usr local share }
+      v = ENV['XDG_DATA_DIRS']
+        .to_s
+        .downcase
+        .split(/[^a-z0-9]+/)
+        .select { |r| r != "" }
+        .uniq
+        .reject { |r| exclude.include?(r) }
+      if v.length == 1
+        desktop = v
+          .first
+          .downcase
+      end
+    end
+    desktop.to_sym if desktop
+  end
+
   def self.set_wallpaper(path)
     case os
     when :windows
@@ -131,6 +154,17 @@ module Flickpaper
   end
 
   def self.set_wallpaper_linux(path)
+    case window_manager
+    when :gnome
+      set_wallpaper_gnome(path)
+    when :kde
+      set_wallpaper_kde(path)
+    else
+      set_wallpaper_feh(path)
+    end
+  end
+
+  def self.set_wallpaper_gnome(path)
     dbus_launch = %x{ which dbus-launch }.to_s.strip
     gsettings = %x{ which gsettings }.to_s.strip
     if dbus_launch == "" || gsettings == ""
@@ -146,6 +180,22 @@ module Flickpaper
         #{gsettings} set org.gnome.desktop.background picture-uri "file://#{path}"
       EOBASH
       system(bash)
+    end
+  end
+
+  # TODO
+  def self.set_wallpaper_kde(path)
+    false
+  end
+
+  def self.set_wallpaper_feh(path)
+    feh = %x{ which feh }.to_s.strip
+    if feh == ""
+      false
+    else
+      # can be tile, center, max, fill
+      scaling = 'fill'
+      system("#{feh} --bg-#{scaling} \"#{path}\"")
     end
   end
 
