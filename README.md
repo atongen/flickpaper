@@ -61,6 +61,13 @@ if [ ! -z "$FLICKPAPER" ]; then
 fi
 ```
 
+And something similar to this in your crontab:
+
+```
+# m h  dom mon dow   command
+27 * * * * DISPLAY=:0.0 XAUTHORITY=/home/atongen/.Xauthority /home/atongen/bin/flickr_wallpaper.sh
+```
+
 ## Contributing
 
 1. Fork it ( https://github.com/atongen/flickpaper/fork )
