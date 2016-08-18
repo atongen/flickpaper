@@ -1,13 +1,13 @@
 PATH
   remote: .
   specs:
-    flickpaper (0.0.4)
+    flickpaper (0.0.5)
       flickraw
 
 GEM
   remote: https://rubygems.org/
   specs:
-    flickraw (0.9.8)
+    flickraw (0.9.9)
     rake (10.4.2)
 
 PLATFORMS
@@ -17,3 +17,6 @@ DEPENDENCIES
   bundler (~> 1.7)
   flickpaper!
   rake (~> 10.0)
+
+BUNDLED WITH
+   1.11.2

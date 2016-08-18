@@ -288,7 +288,8 @@ module Flickpaper
       result = Flickpaper.set_wallpaper(options[:image])
       if result
         log.info("Set photo #{my_photo['id']} as wallpaper")
-        Flickpaper.put_ids(options[:dump], ids<<my_photo['id'])
+        ids.unshift(my_photo['id'])
+        Flickpaper.put_ids(options[:dump], ids.take(1000))
       else
         log.error("Unable to set photo #{my_photo['id']} as wallpaper")
       end
